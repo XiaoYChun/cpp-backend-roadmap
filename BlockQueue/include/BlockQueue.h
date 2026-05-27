@@ -3,7 +3,7 @@
 #include <mutex>
 #include <condition_variable>
 
-templete <typename T>
+template <typename T>
 class BlockQueue {
 public:
     BlockQueue() = default;
@@ -21,19 +21,19 @@ private:
     std::condition_variable m_cv;
 
     bool m_isClosed = false;
-}
+};
 
-templete <typename T>
-void BlockQueue::push(const T& task) {
+template <typename T>
+void BlockQueue<T>::push(const T& task) {
     std::lock_guard<std::mutex> pushLock(m_mutex);
     
     m_taskQueue.push(task);
 
-    cv.notify_one();
+    m_cv.notify_one();
 }
 
-templete <typename T>
-std::optional<T> BlockQueue::pop() {
+template <typename T>
+std::optional<T> BlockQueue<T>::pop() {
     std::unique_lock<std::mutex> popLock(m_mutex);
     
     m_cv.wait(popLock, [this]() {
@@ -43,18 +43,18 @@ std::optional<T> BlockQueue::pop() {
     if (!m_taskQueue.empty()) {
         T task = m_taskQueue.front();
         m_taskQueue.pop();
-    } else {
-        return std::nullopt;
+
+        return task;
     }
 
-    return task;
+    return std::nullopt;
 }
 
-templete <typename T>
-void BlockQueue::close() {
-    std::lock_guard<mutex> closeLock(m_mutex);
+template <typename T>
+void BlockQueue<T>::close() {
+    std::lock_guard<std::mutex> closeLock(m_mutex);
 
     m_isClosed = true;
 
-    cv.notify_all();
+    m_cv.notify_all();
 }
