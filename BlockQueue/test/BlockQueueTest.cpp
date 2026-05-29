@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <thread>
-#include <cassert>
 #include <vector>
 #include <atomic>
 
@@ -22,6 +21,7 @@ void TestSingleThreadBasic() {
 
         assert(task == trueId && "TestSingleThreadBasic: Pop ERROR!");
     }
+    taskQueue.close();
 
     std::cout << "TestSingleThreadBasic Success!" << std::endl;
 }
@@ -79,11 +79,74 @@ void TestMutiThreadBasic() {
     std::cout << "TestMutiThreadBasic Success!" << std::endl;
 }
 
+void TestBoundary() {
+    std::cout << "Test BlockQueue Boundary Feature!" << std::endl;
+
+    BlockQueue<int> pushAfterCloseQueue;
+    const int pushAfterCloseTask = 1;
+    pushAfterCloseQueue.close();
+    bool pushStatus = pushAfterCloseQueue.push(pushAfterCloseTask);
+    assert(pushStatus == false && "TestBoundary_1: ERROR!");
+
+    BlockQueue<int> mutiCloseQueue;
+    mutiCloseQueue.close();
+    mutiCloseQueue.close();
+    mutiCloseQueue.close();
+
+    BlockQueue<int> closeFeatureQueue;
+    std::optional<int> taskPacket;
+    std::thread popThread([&closeFeatureQueue, &taskPacket]() {
+        while (true) {
+            taskPacket = closeFeatureQueue.pop();
+            if (!taskPacket.has_value()) {
+                break;
+            }
+        }
+    });
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    closeFeatureQueue.close();
+    if (popThread.joinable()) {
+        popThread.join();
+    }
+    assert(!taskPacket.has_value() && "TestBoundary_3: taskPacket isn't nullopt!");
+    
+    BlockQueue<int> competitveQueue;
+    std::vector<std::thread> popThreads;
+    const int POP_THREADS_COUNT = 5;
+    const int competitveTask = 1;
+    std::atomic<int> successCount{0};
+    for (int i = 1; i <= POP_THREADS_COUNT; i++) {
+        popThreads.emplace_back([&competitveQueue, &successCount]() {
+            while (true) {
+                std::optional<int> taskPacket = competitveQueue.pop();
+                if (taskPacket.has_value()) {
+                    successCount++;
+                } else {
+                    break;
+                }
+            }
+        });
+    }
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    competitveQueue.push(competitveTask);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    competitveQueue.close();
+    for (auto& t : popThreads) {
+        if (t.joinable()) {
+            t.join();
+        }
+    }
+    assert(successCount == competitveTask && "TestBoundary_4: ERROR!");
+
+    std::cout << "TestBoundary Success!" << std::endl;
+}
+
 int main() {
     std::cout << "-- BLOCKQUEUE TEST START --" << std::endl;
 
     TestSingleThreadBasic();
     TestMutiThreadBasic();
+    TestBoundary();
 
     std::cout << "-- BLOCKQUEUE TEST SUCCESS --" << std::endl;
     
