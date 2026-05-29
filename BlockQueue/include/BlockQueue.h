@@ -15,6 +15,9 @@ public:
     std::optional<T> pop();
     void close();
 
+    bool empty();
+    size_t size();
+
 private:
     std::queue<T> m_taskQueue;
     std::mutex m_mutex;
@@ -58,3 +61,15 @@ void BlockQueue<T>::close() {
 
     m_cv.notify_all();
 }
+
+template <typename T>
+bool BlockQueue<T>::empty() {
+    return m_taskQueue.empty();
+}
+
+template <typename T>
+size_t BlockQueue<T>::size() {
+    return m_taskQueue.size();
+}
+
+
