@@ -58,14 +58,14 @@ std::optional<T> BlockQueue<T>::pop() {
         return !m_taskQueue.empty() || m_isClosed;
     });
     
-    if (!m_taskQueue.empty()) {
-        T task = m_taskQueue.front();
-        m_taskQueue.pop();
-
-        return task;
+    if (m_taskQueue.empty() && m_isClosed) {
+        return std::nullopt;
     }
 
-    return std::nullopt;
+    T task = m_taskQueue.front();
+    m_taskQueue.pop();
+
+    return task;
 }
 
 template <typename T>
