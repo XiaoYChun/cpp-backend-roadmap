@@ -1,0 +1,5 @@
+add_library(Logger ${CMAKE_CURRENT_SOURCE_DIR}/src/ThreadPool.cpp)
+target_include_directories(Logger PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+add_executable(LoggerTest test/LoggerTest.cpp)
+target_link_libraries(LoggerTest PRIVATE Logger)
