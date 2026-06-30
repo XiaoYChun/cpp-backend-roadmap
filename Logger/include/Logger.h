@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <string>
+#include <ctime>
 
 class Logger {
 public:
@@ -33,8 +34,10 @@ public:
     void Log(const Level level, const std::string& logInfo);
 
 private:
+    std::tm GetCurrentTimeStruct();
     std::string CurrentTimeToStr();
     std::string LevelToStr(Level level);
+    std::string FormatLogStr(const Level level, const std::string& logInfo);
 
     LoggerConfig m_loggerConfig;
 
